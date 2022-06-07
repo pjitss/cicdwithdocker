@@ -1,4 +1,4 @@
-FROM tomcat9
+FROM tomcat:9
 
 LABEL maintainer="Prajeet"
 
