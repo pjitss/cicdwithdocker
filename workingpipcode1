@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+        tools{
+      maven "mymaven3"
+        }
+        stages {
+        stage('Checkout source code') {
+            steps{
+              echo 'Hello World'
+              checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/pjitss/cicdwithdocker.git']]])
+            }
+        }
+        stage("Build docker image") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Docker Build and Tag') {
+            steps {
+                sh 'docker build -t tomcat9:1.0.17 .'
+                sh 'docker tag samplewebapp jitss/tomcat9:1.0.17'
+            }
+        }
+        stage('Publish image to Docker Hub') {
+            steps {
+            withCredentials([usernamePassword(credentialsId: 'docuser', passwordVariable: 'pass', usernameVariable: 'user')]) {
+                sh "docker login -u ${user} -p ${pass}"
+            }
+                sh 'whoami'
+                sh 'docker push jitss/tomcat9:1.0.17'
+            }
+        }
+        stage('Run Docker container on Jenkins Agent') {
+            steps {
+                sh 'docker run -d -p 8003:8080 jitss/tomcat9:1.0.17'
+            }
+        }
+    }
+}
